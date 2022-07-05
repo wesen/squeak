@@ -1,0 +1,15 @@
+tables:
+  users:
+    id: auto
+    firstName: firstName
+    lastName: lastName
+    email: email
+
+generate:
+  createTables: true
+  tables:
+    users:
+      count: 1000
+  dialect: sqlite
+  # this could be sql or db
+  output: sql
