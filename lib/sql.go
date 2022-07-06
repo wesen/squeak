@@ -4,6 +4,12 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
+var SQLDialectIds = map[SQLDialect][]string{
+	SQLite:     {"sqlite"},
+	MySQL:      {"mysql"},
+	PostGreSQL: {"postgresql"},
+}
+
 type SQLDialect enumflag.Flag
 
 const (
@@ -11,5 +17,3 @@ const (
 	PostGreSQL
 	MySQL
 )
-
-var CurrentSQLDialect SQLDialect

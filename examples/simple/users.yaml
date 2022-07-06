@@ -10,6 +10,6 @@ generate:
   tables:
     users:
       count: 1000
-  dialect: sqlite
+  dialect: mysql
   # this could be sql or db
   output: sql
