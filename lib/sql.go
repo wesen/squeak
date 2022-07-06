@@ -11,3 +11,5 @@ const (
 	PostGreSQL
 	MySQL
 )
+
+var CurrentSQLDialect SQLDialect
