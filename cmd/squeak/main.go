@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag"
 	"squeak/cmd/squeak/generate"
@@ -33,16 +34,21 @@ func main() {
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")
 	_ = rootCmd.MarkFlagRequired("config")
 
+	config := lib.NewConfig()
+
 	// we accept overrides for the different settings under `generate`
-	// in the YAML file
-	// TODO(manuel): this should be moved to the RootCmd
+	// in the YAML file.
+	// TODO(manuel): The problem here is that we will override the config settings if we pass
+	// a pointer to the variable directly
 	rootCmd.PersistentFlags().VarP(
-		enumflag.New(&lib.CurrentSQLDialect, "dialect",
+		enumflag.New(&config.Dialect, "dialect",
 			SQLDialectIds, enumflag.EnumCaseInsensitive),
 		"dialect", "d",
 		"Dialect to use for the generated SQL statements")
 
 	rootCmd.AddCommand(&generate.GenerateCmd)
 
-	_ = rootCmd.Execute()
+	ctx := context.WithValue(context.TODO(), "config", lib.NewConfig())
+
+	_ = rootCmd.ExecuteContext(ctx)
 }

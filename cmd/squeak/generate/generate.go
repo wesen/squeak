@@ -12,8 +12,15 @@ var GenerateCmd = cobra.Command{
 	Use:   "generate",
 	Short: "Generate CREATE and INSERT statements",
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		config, cast := ctx.Value("config").(*lib.Config)
+		if !cast {
+			cmd.PrintErrf("Could not get config\n")
+			return
+		}
+
 		fmt.Printf("sql dialect is: %d=%q\n",
-			lib.CurrentSQLDialect,
+			config.Dialect,
 			cmd.Flags().Lookup("dialect").Value.String())
 	},
 }
