@@ -24,12 +24,18 @@ type Config struct {
 
 func (config *Config) FromConfigFile(configFile *ConfigFile) {
 	config.CreateTables = configFile.Generate.CreateTables
-	dialectValue := enumflag.New(&config.Dialect, configFile.Generate.Dialect, SQLDialectIds, enumflag.EnumCaseInsensitive)
-	sqlDialect, castSuccessful := dialectValue.Get().(SQLDialect)
+	dialectValue := enumflag.New(&config.Dialect, "dialect", SQLDialectIds, enumflag.EnumCaseInsensitive)
+	err := dialectValue.Set(configFile.Generate.Dialect)
+	if err != nil {
+		log.Fatal().Msgf("Could not parse SQL dialect: %s", configFile.Generate.Dialect)
+	}
+
+	v := dialectValue.Get()
+	sqlDialect, castSuccessful := v.(*SQLDialect)
 	if !castSuccessful {
 		log.Fatal().Msgf("Could not parse SQL dialect: %s", configFile.Generate.Dialect)
 	}
-	config.Dialect = sqlDialect
+	config.Dialect = *sqlDialect
 	config.Output = configFile.Generate.Output
 }
 

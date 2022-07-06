@@ -21,7 +21,9 @@ func loadConfigFile(path string) (*lib.ConfigFile, error) {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Could not open config file %s", path)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -64,10 +66,7 @@ var rootCmd = cobra.Command{
 			log.Fatal().Msg("No config set in context")
 		}
 
-		if cmd.Flags().Lookup("dialect") != nil {
-			config.Dialect = overrideSQLDialect
-		}
-
+		// parse config file
 		configValue := cmd.Flags().Lookup("config").Value
 		if configValue == nil || configValue.String() == "" {
 			log.Fatal().Msg("No config file given")
@@ -77,6 +76,13 @@ var rootCmd = cobra.Command{
 			log.Fatal().Err(err).Msg("Could not load config file")
 		}
 		config.FromConfigFile(configFile)
+
+		// handle overrides
+		dialectValue := cmd.Flags().Lookup("dialect")
+		if dialectValue != nil {
+			config.Dialect = overrideSQLDialect
+		}
+
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("squeak")
