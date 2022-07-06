@@ -1,9 +1,24 @@
 package lib
 
 import (
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/thediveo/enumflag"
 	_ "gopkg.in/yaml.v3"
+)
+
+var OutputTypeIds = map[OutputType][]string{
+	OutputTypeSQL:    {"sql"},
+	OutputTypeCSV:    {"csv"},
+	OutputTypeSQLite: {"db"},
+}
+
+type OutputType enumflag.Flag
+
+const (
+	OutputTypeSQL OutputType = iota
+	OutputTypeCSV
+	OutputTypeSQLite
 )
 
 type GenerateConfig struct {
@@ -19,30 +34,45 @@ type ConfigFile struct {
 type Config struct {
 	CreateTables bool
 	Dialect      SQLDialect
-	Output       string
+	Output       OutputType
+}
+
+func parseEnumFlag(
+	flag interface{}, typename string, mapping interface{},
+	value string,
+) (interface{}, error) {
+	flagValue := enumflag.New(flag, typename, mapping, enumflag.EnumCaseInsensitive)
+	err := flagValue.Set(value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not parse flag %s", typename)
+	}
+	v := flagValue.Get()
+	ret, castSuccessful := v.(*SQLDialect)
+	if !castSuccessful {
+		return nil, errors.Wrapf(err, "Could not parse flag %s", typename)
+	}
+
+	return ret, nil
 }
 
 func (config *Config) FromConfigFile(configFile *ConfigFile) {
 	config.CreateTables = configFile.Generate.CreateTables
-	dialectValue := enumflag.New(&config.Dialect, "dialect", SQLDialectIds, enumflag.EnumCaseInsensitive)
-	err := dialectValue.Set(configFile.Generate.Dialect)
-	if err != nil {
-		log.Fatal().Msgf("Could not parse SQL dialect: %s", configFile.Generate.Dialect)
-	}
 
-	v := dialectValue.Get()
-	sqlDialect, castSuccessful := v.(*SQLDialect)
-	if !castSuccessful {
-		log.Fatal().Msgf("Could not parse SQL dialect: %s", configFile.Generate.Dialect)
+	// crazy boilerplate
+	_, err := parseEnumFlag(&config.Dialect, "SQLDialect", SQLDialectIds, configFile.Generate.Dialect)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Could not parse SQLDialect: %s", configFile.Generate.Dialect)
 	}
-	config.Dialect = *sqlDialect
-	config.Output = configFile.Generate.Output
+	_, err = parseEnumFlag(&config.Output, "OutputType", OutputTypeIds, configFile.Generate.Output)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Could not parse OutputType: %s", configFile.Generate.Output)
+	}
 }
 
 func NewConfig() *Config {
 	return &Config{
 		Dialect:      SQLite,
-		Output:       "sql",
+		Output:       OutputTypeSQL,
 		CreateTables: false,
 	}
 }

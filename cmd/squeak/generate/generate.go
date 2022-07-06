@@ -19,9 +19,12 @@ var GenerateCmd = cobra.Command{
 			return
 		}
 
-		fmt.Printf("sql dialect is: %d=%q\n",
+		fmt.Printf("sql dialect is: %d=%q, output type is: %d=%q\n",
 			config.Dialect,
-			cmd.Flags().Lookup("dialect").Value.String())
+			cmd.Flags().Lookup("dialect").Value.String(),
+			config.Output,
+			cmd.Flags().Lookup("output").Value.String(),
+		)
 	},
 }
 

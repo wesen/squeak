@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -83,13 +82,16 @@ var rootCmd = cobra.Command{
 			config.Dialect = overrideSQLDialect
 		}
 
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("squeak")
+		outputTypeValue := cmd.Flags().Lookup("output")
+		if outputTypeValue != nil {
+			config.Output = overrideOutputType
+		}
+
 	},
 }
 
 var overrideSQLDialect lib.SQLDialect = lib.SQLite
+var overrideOutputType lib.OutputType = lib.OutputTypeSQL
 
 func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
@@ -106,7 +108,12 @@ func main() {
 		enumflag.New(&overrideSQLDialect, "dialect",
 			lib.SQLDialectIds, enumflag.EnumCaseInsensitive),
 		"dialect", "d",
-		"Dialect to use for the generated SQL statements")
+		"Dialect to use for the generated SQL statements (sqlite, mysql, postgresql)")
+	rootCmd.PersistentFlags().VarP(
+		enumflag.New(&overrideOutputType, "output",
+			lib.OutputTypeIds, enumflag.EnumCaseInsensitive),
+		"output", "O",
+		"Output type (SQL, CSV or SQLite)")
 
 	rootCmd.AddCommand(&generate.GenerateCmd)
 
