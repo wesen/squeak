@@ -19,14 +19,21 @@ var GenerateCmd = cobra.Command{
 			return
 		}
 
-		fmt.Printf("sql dialect is: %d=%q, output type is: %d=%q\n",
+		if cmd.Flags().Changed("create-tables") {
+			createTables, _ := cmd.Flags().GetBool("create-tables")
+			config.CreateTables = createTables
+		}
+
+		fmt.Printf("sql dialect is: %d=%q, output type is: %d=%q, createTables: %v\n",
 			config.Dialect,
 			cmd.Flags().Lookup("dialect").Value.String(),
 			config.Output,
 			cmd.Flags().Lookup("output").Value.String(),
+			config.CreateTables,
 		)
 	},
 }
 
 func init() {
+	GenerateCmd.PersistentFlags().Bool("create-tables", false, "Generate CREATE TABLE statements")
 }
