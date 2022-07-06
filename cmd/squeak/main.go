@@ -2,16 +2,41 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/thediveo/enumflag"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"os"
 	"squeak/cmd/squeak/generate"
 	"squeak/lib"
 	"time"
 )
 import "github.com/rs/zerolog"
+
+func loadConfigFile(path string) (*lib.ConfigFile, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Could not open config file %s", path)
+	}
+	defer file.Close()
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Could not read config file %s", path)
+	}
+
+	configFile := &lib.ConfigFile{}
+
+	err = yaml.Unmarshal(bytes, &configFile)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Could not parse config file %s", path)
+	}
+
+	return configFile, nil
+}
 
 var rootCmd = cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -42,14 +67,22 @@ var rootCmd = cobra.Command{
 		if cmd.Flags().Lookup("dialect") != nil {
 			config.Dialect = overrideSQLDialect
 		}
+
+		configValue := cmd.Flags().Lookup("config").Value
+		if configValue == nil || configValue.String() == "" {
+			log.Fatal().Msg("No config file given")
+		}
+		configFile, err := loadConfigFile(configValue.String())
+		if err != nil {
+			log.Fatal().Err(err).Msg("Could not load config file")
+		}
+		config.FromConfigFile(configFile)
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("squeak")
 	},
 }
 
-var SQLDialectIds = map[lib.SQLDialect][]string{
-	lib.SQLite:     {"sqlite"},
-	lib.MySQL:      {"mysql"},
-	lib.PostGreSQL: {"postgresql"},
-}
 var overrideSQLDialect lib.SQLDialect = lib.SQLite
 
 func main() {
@@ -57,12 +90,15 @@ func main() {
 
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().String("config", "", "Path to config file")
-	_ = rootCmd.MarkFlagRequired("config")
+	err := rootCmd.MarkPersistentFlagRequired("config")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Could not mark config flag required")
+	}
 
 	// we accept overrides for the different settings in the YAML file
 	rootCmd.PersistentFlags().VarP(
 		enumflag.New(&overrideSQLDialect, "dialect",
-			SQLDialectIds, enumflag.EnumCaseInsensitive),
+			lib.SQLDialectIds, enumflag.EnumCaseInsensitive),
 		"dialect", "d",
 		"Dialect to use for the generated SQL statements")
 
