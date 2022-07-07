@@ -4,12 +4,16 @@ tables:
     firstName: firstName
     lastName: lastName
     email: email
+  addresses:
+    id: auto
+    userId: users.id
+    street: street
 
 generate:
   createTables: true
   tables:
     users:
-      count: 10
+      count: 1000
   dialect: mysql
   # this could be sql or db
   output: sql
