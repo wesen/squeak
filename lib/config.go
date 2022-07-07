@@ -21,20 +21,28 @@ const (
 	OutputTypeSQLite
 )
 
+type TableGenerateConfig struct {
+	Count int `yaml:"count"`
+}
+
 type GenerateConfig struct {
-	CreateTables bool   `yaml:"createTables"`
-	Dialect      string `yaml:"dialect"`
-	Output       string `yaml:"output"`
+	CreateTables bool                            `yaml:"createTables"`
+	Dialect      string                          `yaml:"dialect"`
+	Output       string                          `yaml:"output"`
+	Tables       map[string]*TableGenerateConfig `yaml:"tables,omitempty"`
 }
 
 type ConfigFile struct {
-	Generate GenerateConfig `yaml:"generate"`
+	Tables   map[string]map[string]string `yaml:"tables,flow,omitempty"`
+	Generate GenerateConfig               `yaml:"generate"`
 }
 
 type Config struct {
-	CreateTables bool
-	Dialect      SQLDialect
-	Output       OutputType
+	CreateTables          bool
+	Dialect               SQLDialect
+	Output                OutputType
+	Tables                map[string]map[string]string
+	GenerateTablesOptions map[string]*TableGenerateConfig
 }
 
 func parseEnumFlag(
@@ -57,6 +65,8 @@ func parseEnumFlag(
 
 func (config *Config) FromConfigFile(configFile *ConfigFile) {
 	config.CreateTables = configFile.Generate.CreateTables
+	config.Tables = configFile.Tables
+	config.GenerateTablesOptions = configFile.Generate.Tables
 
 	// crazy boilerplate
 	_, err := parseEnumFlag(&config.Dialect, "SQLDialect", SQLDialectIds, configFile.Generate.Dialect)

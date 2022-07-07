@@ -4,6 +4,7 @@ package generate
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"squeak/lib"
 )
@@ -31,6 +32,28 @@ var GenerateCmd = cobra.Command{
 			cmd.Flags().Lookup("output").Value.String(),
 			config.CreateTables,
 		)
+
+		if config.CreateTables {
+			res, err := lib.CreateTables(config.Tables, config.Dialect, config.Output, config.GenerateTablesOptions)
+			if err != nil {
+				log.Fatal().Err(err).Msg("Could not generate data")
+			}
+
+			for table, rows := range res {
+				cmd.Printf("-- %s\n", table)
+				cmd.Printf("%s\n", rows)
+			}
+		}
+
+		res, err := lib.GenerateData(config.Tables, config.Dialect, config.Output, config.GenerateTablesOptions)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Could not generate data")
+		}
+
+		for table, rows := range res {
+			cmd.Printf("-- %s\n", table)
+			cmd.Printf("%s\n", rows)
+		}
 	},
 }
 
